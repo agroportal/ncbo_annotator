@@ -1,10 +1,23 @@
-FROM ruby:2.6
+ARG RUBY_VERSION=3.2
+ARG DISTRO=bullseye
+ARG TESTKIT_BASE_IMAGE=ontoportal/testkit-base:ruby${RUBY_VERSION}-${DISTRO}
+FROM ${TESTKIT_BASE_IMAGE}
 
-RUN apt-get update -yqq && apt-get install -yqq --no-install-recommends openjdk-11-jre-headless raptor2-utils
-# The Gemfile Caching Trick
-RUN mkdir -p /srv/ontoportal/ncbo_annotator
-COPY Gemfile* /srv/ontoportal/ncbo_annotator/
-WORKDIR /srv/ontoportal/ncbo_annotator
-RUN gem install bundler -v "$(grep -A 1 "BUNDLED WITH" Gemfile.lock | tail -n 1)"
-RUN bundle install
-COPY . /srv/ontoportal/ncbo_annotator
+WORKDIR /app
+
+# Keep the old CI slice size (default 500) so goo's sliced loading stays exercised
+ENV GOO_SLICES=100
+
+COPY Gemfile* *.gemspec ./
+
+# Respect the project's Bundler lock when present.
+RUN if [ -f Gemfile.lock ]; then \
+      BUNDLER_VERSION=$(grep -A 1 "BUNDLED WITH" Gemfile.lock | tail -n 1 | tr -d ' '); \
+      gem install bundler -v "$BUNDLER_VERSION"; \
+    fi
+
+RUN bundle install --jobs 4 --retry 3
+
+COPY . ./
+
+CMD ["bundle", "exec", "rake"]

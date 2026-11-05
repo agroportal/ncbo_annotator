@@ -71,12 +71,13 @@ class TestAnnotator < TestCase
 
   def test_generate_dictionary_file
     start_timestamp = Time.now
+    sleep(1)
     ontologies = AnnotatorUnit.ontologies.dup
     class_pages = TestAnnotator.all_classes(ontologies)
     assert class_pages.length > 100, "No classes in system ???"
     annotator = Annotator::Models::NcboAnnotator.new
     annotator.generate_dictionary_file
-    assert File.exists?(Annotator.settings.mgrep_dictionary_file), "The dictionary file did not get created successfully"
+    assert File.exist?(Annotator.settings.mgrep_dictionary_file), "The dictionary file did not get created successfully"
     lines = File.readlines(Annotator.settings.mgrep_dictionary_file)
     cur_inst = annotator.redis_current_instance()
 
@@ -97,11 +98,11 @@ class TestAnnotator < TestCase
     assert @@redis.exists?(Annotator::Models::NcboAnnotator::MGREP_DICTIONARY_REFRESH_TIMESTAMP)
     assert @@redis.exists?(Annotator::Models::NcboAnnotator::LAST_MGREP_RESTART_TIMESTAMP)
     refresh_timestamp = @@redis.get(Annotator::Models::NcboAnnotator::MGREP_DICTIONARY_REFRESH_TIMESTAMP)
-    assert refresh_timestamp > start_timestamp
+    assert_operator refresh_timestamp, :>, start_timestamp
   end
 
   def test_mallet_recognizer
-    skip "Skipping Mallet recognizer test because the core Java APIs are not present" unless (File.exists?($ncbo_annotator_project_bin + "mallet.jar"))
+    skip "Skipping Mallet recognizer test because the core Java APIs are not present" unless (File.exist?($ncbo_annotator_project_bin + "mallet.jar"))
 
     count, acronyms, cogpo = LinkedData::SampleData::Ontology.create_ontologies_and_submissions({
         ont_count: 1,
@@ -241,7 +242,7 @@ class TestAnnotator < TestCase
       annotations = annotator.annotate(text, {
           ontologies: [],
           semantic_types: [],
-          filter_integers: true,
+          filter_integers: false,
           expand_class_hierarchy: false,
           expand_hierarchy_levels: 0,
           expand_with_mappings: false,
@@ -250,16 +251,17 @@ class TestAnnotator < TestCase
           with_synonyms: true
       })
       direct = annotations
-      assert direct.length >= size && direct.length > 0
+      assert_operator 0, :<, direct.length
+      assert_operator size, :<, direct.length
       found = 0
       class_page.each do |cls|
         if cls.prefLabel.length > 2
           #TODO: This assertion may fail if the dictionary file on mgrep server does not contain the terms from the test ontologies
-          assert (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length > 0
+          assert_operator 0, :<, (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length, "expected to find #{cls.id}"
           found += 1
         end
       end
-      assert found >= size
+      assert_operator size, :<=, found
     end
 
     # test for a specific class annotation
@@ -278,12 +280,12 @@ class TestAnnotator < TestCase
         with_synonyms: true
     })
 
-    assert annotations.length == 1
-    assert annotations.first.annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Data_Storage"
-    assert annotations.first.annotations.length == 1
-    assert annotations.first.annotations.first[:from] == 1
-    assert annotations.first.annotations.first[:to] == term_text.length
-    assert text[annotations.first.annotations.first[:from] - 1, annotations.first.annotations.first[:to]] == term_text
+    assert_equal 1, annotations.length
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Data_Storage", annotations.first.annotatedClass.id.to_s
+    assert_equal 1, annotations.first.annotations.length
+    assert_equal 1, annotations.first.annotations.first[:from]
+    assert_equal term_text.length, annotations.first.annotations.first[:to]
+    assert_equal term_text, text[annotations.first.annotations.first[:from] - 1, annotations.first.annotations.first[:to]]
 
     # check for a non-existent ontology
     non_existent_ont = ["DOESNOTEXIST"]
@@ -359,7 +361,7 @@ class TestAnnotator < TestCase
     annotations = annotator.annotate(text, {
         ontologies: [],
         semantic_types: [],
-        filter_integers: true,
+        filter_integers: false,
         expand_class_hierarchy: false,
         expand_hierarchy_levels: 0,
         expand_with_mappings: false,
@@ -369,14 +371,15 @@ class TestAnnotator < TestCase
     })
     direct = annotations
 
-    assert direct.length >= size && direct.length > 0
+    assert_operator 0, :<, direct.length
+    assert_operator size, :<, direct.length
     found = 0
     filter_out_next = []
     must_be_next = []
     class_page.each do |cls|
       if cls.prefLabel.length > 2
         #TODO: This assertion may fail if the dictionary file on mgrep server does not contain the terms from the test ontologies
-        assert (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length > 0
+        assert_operator 0, :<, (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length, "expected to find #{cls.id}"
         found += 1
         if cls.prefLabel.length < 10
           filter_out_next << cls
@@ -397,17 +400,18 @@ class TestAnnotator < TestCase
         expand_with_mappings: false,
         min_term_size: 10,
         whole_word_only: true,
-        with_synonyms: true
+        with_synonyms: false
     })
 
     direct = annotations
     filter_out_next.each do |cls|
-      assert (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length == 0
+      assert_equal 0, (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length
     end
     must_be_next.each do |cls|
-      assert (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length > 0
+      assert_operator 0, :<, (direct.select { |x| x.annotatedClass.id.to_s == cls.id.to_s }).length
     end
-    assert must_be_next.length > 0 && filter_out_next.length > 0
+    assert_operator 0, :<, must_be_next.length
+    assert_operator 0, :<, filter_out_next.length
   end
 
   def test_annotate_stop_words
@@ -429,7 +433,7 @@ class TestAnnotator < TestCase
                 "http://purl.obolibrary.org/obo/MCBCC_0000296#Deletion"]
 
     not_show.each do |cls|
-      assert (annotations.select { |x| x.annotatedClass.id.to_s == cls }).length > 0
+      assert_operator 0, :<, (annotations.select { |x| x.annotatedClass.id.to_s == cls }).length
     end
 
     #annotation should not show up
@@ -448,7 +452,7 @@ class TestAnnotator < TestCase
     })
 
     not_show.each do |cls|
-      assert (annotations.select { |x| x.annotatedClass.id.to_s == cls }).length == 0
+      assert_equal 0, (annotations.select { |x| x.annotatedClass.id.to_s == cls }).length
     end
 
     #empty array must annotate all
@@ -467,7 +471,7 @@ class TestAnnotator < TestCase
     })
 
     not_show.each do |cls|
-      assert (annotations.select { |x| x.annotatedClass.id.to_s == cls }).length > 0
+      assert_operator 0, :<, (annotations.select { |x| x.annotatedClass.id.to_s == cls }).length
     end
   end
 
@@ -476,16 +480,16 @@ class TestAnnotator < TestCase
     text = "Aggregate Human Data Aggregate Human Data"
     annotator = Annotator::Models::NcboAnnotator.new
     annotations = annotator.annotate(text)
-    assert annotations.length == 1
-    assert annotations.first.annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Aggregate_Human_Data"
-    assert annotations.first.annotatedClass.submission.ontology.acronym == "BROTEST-0"
-    assert annotations.first.annotations.length == 2
-    assert annotations.first.annotations.first[:from] = 1
-    assert annotations.first.annotations.first[:to] = 1+("Aggregate Human Data".length)
-    assert annotations.first.annotations[1][:from] = 2 + ("Aggregate Human Data".length)
-    assert text[annotations.first.annotations.first[:from]-1,annotations.first.annotations.first[:to]-1] == "Aggregate Human Data"
-    assert annotations.first.annotations[1][:to] == (1 + ("Aggregate Human Data".length)) + ("Aggregate Human Data".length)
-    assert text[annotations.first.annotations[1][:from]-1,annotations.first.annotations[1][:to]-1] == "Aggregate Human Data"
+    assert_equal 1, annotations.length
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Aggregate_Human_Data", annotations.first.annotatedClass.id.to_s
+    assert_equal "BROTEST-0", annotations.first.annotatedClass.submission.ontology.acronym
+    assert_equal 2, annotations.first.annotations.length
+    assert_equal 1, annotations.first.annotations.first[:from]
+    assert_equal "Aggregate Human Data".length, annotations.first.annotations.first[:to]
+    assert_equal 2 + ("Aggregate Human Data".length), annotations.first.annotations[1][:from]
+    assert_equal "Aggregate Human Data", text[annotations.first.annotations.first[:from]-1,annotations.first.annotations.first[:to]]
+    assert_equal (1 + ("Aggregate Human Data".length)) + ("Aggregate Human Data".length), annotations.first.annotations[1][:to]
+    assert_equal "Aggregate Human Data", text[annotations.first.annotations[1][:from]-1,annotations.first.annotations[1][:to]-1]
     annotations = annotator.annotate(text, {
         ontologies: [],
         semantic_types: [],
@@ -498,16 +502,16 @@ class TestAnnotator < TestCase
         with_synonyms: true
     })
 
-    assert annotations.length == 1
-    assert annotations.first.annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Aggregate_Human_Data"
-    assert annotations.first.annotatedClass.submission.ontology.acronym == "BROTEST-0"
-    assert annotations.first.annotations.length == 2
-    assert annotations.first.annotations.first[:from] = 1
-    assert annotations.first.annotations.first[:to] = 1+("Aggregate Human Data".length)
+    assert_equal 1, annotations.length
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Aggregate_Human_Data", annotations.first.annotatedClass.id.to_s
+    assert_equal "BROTEST-0", annotations.first.annotatedClass.submission.ontology.acronym
+    assert_equal 2, annotations.first.annotations.length
+    assert_equal 1, annotations.first.annotations.first[:from]
+    assert_equal "Aggregate Human Data".length, annotations.first.annotations.first[:to]
 
-    assert annotations.first.hierarchy.length == 1
-    assert annotations.first.hierarchy.first.annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Clinical_Care_Data"
-    assert annotations.first.hierarchy.first.distance == 1
+    assert_equal 1, annotations.first.hierarchy.length
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Clinical_Care_Data", annotations.first.hierarchy.first.annotatedClass.id.to_s
+    assert_equal 1, annotations.first.hierarchy.first.distance
     annotations = annotator.annotate(text, {
         ontologies: [],
         semantic_types: [],
@@ -520,13 +524,13 @@ class TestAnnotator < TestCase
         with_synonyms: true
     })
 
-    assert annotations.first.hierarchy.length == 3
-    assert annotations.first.hierarchy.first.annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Clinical_Care_Data"
-    assert annotations.first.hierarchy.first.distance == 1
-    assert annotations.first.hierarchy[1].annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Data_Resource"
-    assert annotations.first.hierarchy[1].distance == 2
-    assert annotations.first.hierarchy[2].annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Information_Resource"
-    assert annotations.first.hierarchy[2].distance == 3
+    assert_equal 3, annotations.first.hierarchy.length
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Clinical_Care_Data", annotations.first.hierarchy.first.annotatedClass.id.to_s
+    assert_equal 1, annotations.first.hierarchy.first.distance
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Data_Resource", annotations.first.hierarchy[1].annotatedClass.id.to_s
+    assert_equal 2, annotations.first.hierarchy[1].distance
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Information_Resource", annotations.first.hierarchy[2].annotatedClass.id.to_s
+    assert_equal 3, annotations.first.hierarchy[2].distance
   end
 
   def test_annotate_hierachy_terms_multiple
@@ -545,56 +549,56 @@ class TestAnnotator < TestCase
         with_synonyms: true
     })
 
-    assert annotations[0].annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Aggregate_Human_Data"
-    assert annotations[0].annotations.length == 3
-    assert annotations[0].hierarchy.length == 4
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Aggregate_Human_Data", annotations[0].annotatedClass.id.to_s
+    assert_equal 3, annotations[0].annotations.length
+    assert_equal 4, annotations[0].hierarchy.length
     hhh = annotations[0].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
     hhh.sort!
 
-    assert hhh == [
+    assert_equal [
       "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource",
       "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Information_Resource",
       "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Clinical_Care_Data",
       "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Data_Resource"
-    ].sort
+    ].sort, hhh
 
-    assert annotations[1].annotatedClass.id.to_s == "http://purl.obolibrary.org/obo/MCBCC_0000288#ChromosomalMutation"
-    assert annotations[1].annotations.length == 2
+    assert_equal "http://purl.obolibrary.org/obo/MCBCC_0000288#ChromosomalMutation", annotations[1].annotatedClass.id.to_s
+    assert_equal 2, annotations[1].annotations.length
     hhh = annotations[1].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
-    hhh == ["http://purl.obolibrary.org/obo/MCBCC_0000287#GeneticVariation"]
+    assert_equal ["http://purl.obolibrary.org/obo/MCBCC_0000287#GeneticVariation"], hhh
 
-    assert annotations[2].annotatedClass.id.to_s == "http://purl.obolibrary.org/obo/MCBCC_0000289#ChromosomalDeletion"
-    assert annotations[2].annotations.length == 1
+    assert_equal "http://purl.obolibrary.org/obo/MCBCC_0000289#ChromosomalDeletion", annotations[2].annotatedClass.id.to_s
+    assert_equal 1, annotations[2].annotations.length
     hhh = annotations[2].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
     assert hhh == ["http://purl.obolibrary.org/obo/MCBCC_0000287#GeneticVariation",
             "http://purl.obolibrary.org/obo/MCBCC_0000288#ChromosomalMutation"]
 
-    assert annotations[3].annotatedClass.id.to_s == "http://purl.obolibrary.org/obo/MCBCC_0000296#Deletion"
+    assert_equal "http://purl.obolibrary.org/obo/MCBCC_0000296#Deletion", annotations[3].annotatedClass.id.to_s
     hhh = annotations[3].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
-    assert hhh = ["http://purl.obolibrary.org/obo/MCBCC_0000287#GeneticVariation",
-     "http://purl.obolibrary.org/obo/MCBCC_0000295#GeneMutation"]
+    assert_equal ["http://purl.obolibrary.org/obo/MCBCC_0000287#GeneticVariation",
+     "http://purl.obolibrary.org/obo/MCBCC_0000295#GeneMutation"], hhh
 
-    assert annotations[4].annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Data_Resource"
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Data_Resource", annotations[4].annotatedClass.id.to_s
     hhh = annotations[4].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
-    assert hhh == ["http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource",
- "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Information_Resource"]
+    assert_equal ["http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource",
+ "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Information_Resource"], hhh
 
-    assert annotations[5].annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource"
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource", annotations[5].annotatedClass.id.to_s
     hhh = annotations[5].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
-    assert hhh == [] #root
+    assert_empty hhh
 
-    assert annotations[6].annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Federal_Funding_Resource"
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Federal_Funding_Resource", annotations[6].annotatedClass.id.to_s
     hhh = annotations[6].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
-    assert hhh == ["http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource",
- "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Funding_Resource"]
+    assert_equal ["http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource",
+ "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Funding_Resource"], hhh
 
-    assert annotations[7].annotatedClass.id.to_s == "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Funding_Resource"
+    assert_equal "http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Funding_Resource", annotations[7].annotatedClass.id.to_s
     hhh = annotations[7].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
-    assert hhh == ["http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource" ]
+    assert_equal ["http://bioontology.org/ontologies/BiomedicalResourceOntology.owl#Resource" ], hhh
 
-    assert annotations[8].annotatedClass.id.to_s == "http://purl.obolibrary.org/obo/MCBCC_0000275#ReceptorAntagonists"
+    assert_equal "http://purl.obolibrary.org/obo/MCBCC_0000275#ReceptorAntagonists", annotations[8].annotatedClass.id.to_s
     hhh = annotations[8].hierarchy.sort {|x| x.distance }.map { |x| x.annotatedClass.id.to_s }
-    assert hhh == ["http://purl.obolibrary.org/obo/MCBCC_0000256#ChemicalsAndDrugs"]
+    assert_equal ["http://purl.obolibrary.org/obo/MCBCC_0000256#ChemicalsAndDrugs"], hhh
 
   end
 
@@ -630,6 +634,7 @@ class TestAnnotator < TestCase
         class_id = terms_a[i]
         ont_acr = onts_a[i]
         sub = LinkedData::Models::Ontology.find(ont_acr).first.latest_submission
+        binding.pry if sub.nil?
         sub.bring(ontology: [:acronym])
         c = LinkedData::Models::Class.find(RDF::URI.new(class_id))
                                     .in(sub)
@@ -748,7 +753,7 @@ class TestAnnotator < TestCase
         classes += page_classes
       end while !page.nil?
     end
-    return classes
+    return classes.sort_by { |c| c.prefLabel }
   end
 
 end

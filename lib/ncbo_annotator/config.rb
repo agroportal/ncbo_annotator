@@ -11,14 +11,11 @@ module Annotator
 
   def config(&block)
     return if @settings_run
-    @settings_run = true
-
-    yield @settings if block_given?
 
     # Set defaults
     @settings.goo_port                   ||= 9000
     @settings.goo_host                   ||= "localhost"
-    @settings.search_server_url          ||= "http://localhost:8983/solr/term_search_core1"
+    @settings.search_server_url          ||= "http://localhost:8983/solr"
     @settings.mgrep_dictionary_file      ||= "./test/tmp/dictionary.txt"
     @settings.mgrep_host                 ||= "localhost"
     @settings.mgrep_port                 ||= 55555
@@ -33,6 +30,7 @@ module Annotator
     @settings.annotator_redis_port       ||= 6379
     @settings.enable_recognizer_param    ||= false
     @settings.supported_recognizers      ||= [:mgrep] # :mgrep, :mallet
+    @settings.lemmatizer_jar             ||= 'lib/Lemmatizer'
     puts "(AN) >> Using ANN Redis instance at "+
       "#{@settings.annotator_redis_host}:#{@settings.annotator_redis_port}"
 
@@ -48,6 +46,9 @@ module Annotator
 
     @settings.annotator_redis_prefix     ||= "c1:"
     @settings.annotator_redis_alt_prefix ||= "c2:"
+
+    yield @settings if block_given?
+    @settings_run = true
   end
 
 end
