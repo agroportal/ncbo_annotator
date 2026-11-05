@@ -5,6 +5,9 @@ FROM ${TESTKIT_BASE_IMAGE}
 
 WORKDIR /app
 
+# Keep the old CI slice size (default 500) so goo's sliced loading stays exercised
+ENV GOO_SLICES=100
+
 COPY Gemfile* *.gemspec ./
 
 # Respect the project's Bundler lock when present.
