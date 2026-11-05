@@ -1,24 +1,25 @@
 source 'https://rubygems.org'
 
-gem 'cube-ruby'
-gem 'faraday', '~> 1.9'
+gem 'faraday'
 gem 'ffi'
 gem 'oj', '~> 3.0'
-gem 'rake', '~> 10.0'
-gem 'redis'
-gem 'ruby-xxHash'
+gem 'rake'
 gem 'request_store'
+gem 'parallel'
+gem 'json-ld'
 gem 'jwt'
-gem 'addressable', '~> 2.8.0'
+gem 'ruby-xxHash'
+gem 'activesupport'
 
-group :development do
-  gem 'minitest', '~> 4.0'
+group :test do
+  gem 'minitest'
+  gem 'minitest-reporters'
+  gem 'ontoportal_testkit', github: 'agroportal/ontoportal_testkit', branch: 'main'
   gem 'pry'
   gem 'simplecov'
   gem 'simplecov-cobertura' # for codecov.io
 end
 
 # NCBO gems (can be from a local dev path or from rubygems/git)
-gem 'goo', github: 'ontoportal-lirmm/goo', branch: 'development'
-gem 'sparql-client', github: 'ontoportal-lirmm/sparql-client', branch: 'master'
-gem 'ontologies_linked_data', github: 'ontoportal-lirmm/ontologies_linked_data', branch: 'development'
+gem 'goo', github: 'agroportal/goo', branch: 'master'
+gem 'ontologies_linked_data', github: 'agroportal/ontologies_linked_data', branch: 'master'
