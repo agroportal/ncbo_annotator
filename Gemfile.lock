@@ -110,7 +110,7 @@ GEM
       rexml (~> 3.2)
     jwt (3.3.0)
       base64
-    libxml-ruby (6.0.0)
+    libxml-ruby (5.0.6)
     link_header (0.0.8)
     logger (1.7.0)
     macaddr (1.7.2)
@@ -137,6 +137,9 @@ GEM
       minitest (>= 5.0, < 7)
       ruby-progressbar
     multi_json (1.21.2)
+    net-ftp (0.3.9)
+      net-protocol
+      time
     net-http (0.10.0)
       net-protocol (>= 0.3.0)
       uri (>= 0.11.1)
@@ -242,6 +245,8 @@ GEM
       concurrent-ruby
       zeitwerk
     systemu (2.6.5)
+    time (0.5.0)
+      date
     timeout (0.6.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
@@ -267,6 +272,7 @@ DEPENDENCIES
   jwt
   minitest
   minitest-reporters
+  net-ftp
   oj (~> 3.0)
   ontologies_linked_data!
   ontoportal_testkit!
@@ -311,7 +317,7 @@ CHECKSUMS
   json-canonicalization (1.0.0) sha256=d4848a8cca7534455c6721f2d9fc9e5e9adca49486864a898810024f67d59446
   json-ld (3.3.2) sha256=b9531893bf5bdc01db428e96953845a23adb1097125ce918ae0f97c4a6e1ab27
   jwt (3.3.0) sha256=44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546
-  libxml-ruby (6.0.0) sha256=a9d9458d018dee591d0995fdc1110cd67ec32b7be67d36fdb9e0b01a4ca9dac4
+  libxml-ruby (5.0.6) sha256=ef82ff4b4c6aaaa9629f0a2d5deccd9502507e368bf2c5a98d675f634013ca46
   link_header (0.0.8) sha256=15c65ce43b29f739b30d05e5f25c22c23797e89cf6f905dbb595fb4c70cb55f9
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   macaddr (1.7.2) sha256=da377809968bbc1160bf02a999e916bb3255000007291d9d1a49a93ceedadf82
@@ -324,6 +330,7 @@ CHECKSUMS
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   minitest-reporters (1.8.0) sha256=8ce5280fb73ad3178ae525454df169b6f28c1b38b1d088ea91815d3a370ba384
   multi_json (1.21.2) sha256=245531eaf54bdba57aba515ff08b4503505c5e09911daa89c5a561e2f85bea8e
+  net-ftp (0.3.9) sha256=307817ccf7f428f79d083f7e36dbb46a9d1d375e0d23027824de1866f0b13b65
   net-http (0.10.0) sha256=1a2ff6e37a05724973c43f2bf7bf105f59c36a4cd0a7e9b1c021a0a566987c27
   net-http-persistent (4.0.8) sha256=ef3de8319d691537b329053fae3a33195f8b070bbbfae8bf1a58c796081960e6
   net-imap (0.6.8) sha256=eb30bb62227b64a3af6b518b04b2375113d69f68f15de59b0193b07d98acf6d9
@@ -374,6 +381,7 @@ CHECKSUMS
   sparql-client (3.2.2) sha256=d3bac6bea08598dad617c0cdc6d380f9d416ef4ab91ca28309fdf40b93f5a571
   stoplight (5.8.3) sha256=271250ed5cba5ed8c40f97dce2f6e2b63a916290eae9cb5f8c9bf1f57e49ab9b
   systemu (2.6.5) sha256=01f7d014b1453b28e5781e15c4d7d63fc9221c29b174b7aae5253207a75ab33e
+  time (0.5.0) sha256=abea008a7c3e8d2727f95f6fab334b7862004c514fbb4b3315285910e8d1650f
   timeout (0.6.1) sha256=78f57368a7e7bbadec56971f78a3f5ecbcfb59b7fcbb0a3ed6ddc08a5094accb
   tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
   uri (1.1.2) sha256=89292e98eabbef6248b0a0ed5e7e398e152f83f17560023a6d94a7f492b169fb

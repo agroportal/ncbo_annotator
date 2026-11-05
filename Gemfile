@@ -23,3 +23,6 @@ end
 # NCBO gems (can be from a local dev path or from rubygems/git)
 gem 'goo', github: 'agroportal/goo', branch: 'master'
 gem 'ontologies_linked_data', github: 'agroportal/ontologies_linked_data', branch: 'master'
+
+# agroportal ontologies_linked_data requires net/ftp, a bundled gem since Ruby 3.1
+gem 'net-ftp'
