@@ -1,6 +1,7 @@
-ARG RUBY_VERSION=3.2
-ARG DISTRO=bullseye
-ARG TESTKIT_BASE_IMAGE=ontoportal/testkit-base:ruby${RUBY_VERSION}-${DISTRO}
+# Set by ontoportal_testkit from .ruby-version, the single Ruby pin
+ARG OPTK_RUBY_VERSION
+ARG DISTRO=bookworm
+ARG TESTKIT_BASE_IMAGE=agroportal/testkit-base:ruby${OPTK_RUBY_VERSION}-${DISTRO}
 FROM ${TESTKIT_BASE_IMAGE}
 
 WORKDIR /app
